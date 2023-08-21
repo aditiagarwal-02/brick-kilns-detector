@@ -244,31 +244,31 @@ def main():
         st.write("The number of brick kilns in the selected region is: ", count_ones)
         st.write("The number of non-brick kilns in the selected region is: ", count_zeros)
         
+        with st.beta_expander("Download Options"):
+            with open('images_kiln.zip', 'rb') as zip_file:
+                zip_data = zip_file.read()
+            st.download_button(
+                label="Download Kiln Images",
+                data=zip_data,
+                file_name='images_kiln.zip',
+                mime="application/zip"
+            )
+            with open('images_no_kiln.zip', 'rb') as zip_file:
+                zip_data = zip_file.read()
+            st.download_button(
+                label="Download Non-Kiln Images",
+                data=zip_data,
+                file_name='images_no_kiln.zip',
+                mime="application/zip"
+            )
 
-        with open('images_kiln.zip', 'rb') as zip_file:
-            zip_data = zip_file.read()
-        st.download_button(
-            label="Download Kiln Images",
-            data=zip_data,
-            file_name='images_kiln.zip',
-            mime="application/zip"
-        )
-        with open('images_no_kiln.zip', 'rb') as zip_file:
-            zip_data = zip_file.read()
-        st.download_button(
-            label="Download Non-Kiln Images",
-            data=zip_data,
-            file_name='images_no_kiln.zip',
-            mime="application/zip"
-        )
-
-        st.download_button(
-        "Download CSV of latitude and longitude of brick kilns",
-        csv,
-        "lat_long.csv",
-        "text/csv",
-        key='download-csv'
-        ) 
+            st.download_button(
+            "Download CSV of latitude and longitude of brick kilns",
+            csv,
+            "lat_long.csv",
+            "text/csv",
+            key='download-csv'
+            ) 
 
         # Cleanup: Remove the temporary directory and zip file
         shutil.rmtree(temp_dir1)
