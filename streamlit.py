@@ -205,7 +205,11 @@ def main():
         temp_dir1 = tempfile.mkdtemp()  # Create a temporary directory to store the images
         with zipfile.ZipFile('images_kiln.zip', 'w') as zipf:
             for i in indices_of_ones:
-                df = df.append({'Latitude': latitudes[i], 'Longitude': longitudes[i]}, ignore_index=True)
+                temp_df = pd.DataFrame({'Latitude': [latitudes[i]], 'Longitude': [longitudes[i]]})
+    
+                # Concatenate the temporary DataFrame with the main DataFrame
+                df = pd.concat([df, temp_df], ignore_index=True)
+    
                 image_filename = f'kiln_{latitudes[i]}_{longitudes[i]}.png'
                 image_path = os.path.join(temp_dir1, image_filename)
 
