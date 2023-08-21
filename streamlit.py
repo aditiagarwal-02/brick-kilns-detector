@@ -236,13 +236,7 @@ def main():
 
         csv = df.to_csv(index=False).encode('utf-8')
 
-        st.download_button(
-        "Download CSV of latitude and longitude of brick kilns",
-        csv,
-        "lat_long.csv",
-        "text/csv",
-        key='download-csv'
-        )      
+             
 
         count_ones = sum(1 for element in flat_modified_list if element == 1)
         count_zeros = sum(1 for element in flat_modified_list if element == 0)
@@ -267,6 +261,14 @@ def main():
             file_name='images_no_kiln.zip',
             mime="application/zip"
         )
+
+        st.download_button(
+        "Download CSV of latitude and longitude of brick kilns",
+        csv,
+        "lat_long.csv",
+        "text/csv",
+        key='download-csv'
+        ) 
 
         # Cleanup: Remove the temporary directory and zip file
         shutil.rmtree(temp_dir1)
