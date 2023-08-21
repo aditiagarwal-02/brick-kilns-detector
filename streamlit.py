@@ -81,7 +81,7 @@ def main():
     model = load_model()
 
     st.title("Brick Kiln Detector")
-    st.write("This app uses a deep learning model to detect brick kilns in satellite images. The model was trained on satellite images of India. The app allows you to select a location on the map and download the images of brick kilns and non-brick kilns in that region.")
+    st.write("This app uses a deep learning model to detect brick kilns in satellite images. The app allows you to select certain area on a map and download the images of brick kilns and non-brick kilns in that region.")
 
     st.sidebar.title("Search Location")
     lat = st.sidebar.number_input("Latitude:", value=20.5937, step=0.000001)
@@ -125,7 +125,11 @@ def main():
 
     ab = st.text_input("API key?", "")
 
-    
+    with st.expander("Instructions"):
+        st.write("1. Enter the latitude and longitude of the bounding box in the sidebar."
+                 "2. Enter Google Maps API key in the text box below."
+                 "3. Click on submit and wait for the results to load."
+                 "4. Download the images and CSV file using the download buttons below.")
 
     if ab and st.button("Submit"):
         st.session_state.ab = ab
