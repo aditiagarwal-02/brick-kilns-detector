@@ -243,8 +243,9 @@ def main():
 
         st.write("The number of brick kilns in the selected region is: ", count_ones)
         st.write("The number of non-brick kilns in the selected region is: ", count_zeros)
+
         
-        with st.beta_expander("Download Options"):
+        with st.expander("Download Options"):
             with open('images_kiln.zip', 'rb') as zip_file:
                 zip_data = zip_file.read()
             st.download_button(
