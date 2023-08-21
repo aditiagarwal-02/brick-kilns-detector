@@ -191,55 +191,55 @@ def main():
                 latitude += delta_lat
             
 
-        images = np.stack(image_array_list, axis=0)
+            images = np.stack(image_array_list, axis=0)
 
 
-        # images = imgs_input_fn(image_array_list)
-        predictions = model.predict(images)
-        predictions = [[1 if element >= 0.5 else 0 for element in sublist] for sublist in predictions]
+            # images = imgs_input_fn(image_array_list)
+            predictions = model.predict(images)
+            predictions = [[1 if element >= 0.5 else 0 for element in sublist] for sublist in predictions]
 
-        flat_modified_list = [element for sublist in predictions for element in sublist]
-        indices_of_ones = [index for index, element in enumerate(flat_modified_list) if element == 1]
-        indices_of_zeros = [index for index, element in enumerate(flat_modified_list) if element == 0]
+            flat_modified_list = [element for sublist in predictions for element in sublist]
+            indices_of_ones = [index for index, element in enumerate(flat_modified_list) if element == 1]
+            indices_of_zeros = [index for index, element in enumerate(flat_modified_list) if element == 0]
 
-        temp_dir1 = tempfile.mkdtemp()  # Create a temporary directory to store the images
-        with zipfile.ZipFile('images_kiln.zip', 'w') as zipf:
-            for i in indices_of_ones:
-                temp_df = pd.DataFrame({'Latitude': [latitudes[i]], 'Longitude': [longitudes[i]]})
-    
-                # Concatenate the temporary DataFrame with the main DataFrame
-                df = pd.concat([df, temp_df], ignore_index=True)
-    
-                image_filename = f'kiln_{latitudes[i]}_{longitudes[i]}.png'
-                image_path = os.path.join(temp_dir1, image_filename)
-
-                pil_image = Image.fromarray(image_array_list[i])
-
-                pil_image.save(image_path, format='PNG')
-                zipf.write(image_path, arcname=image_filename)
-
-        temp_dir2 = tempfile.mkdtemp()  # Create a temporary directory to store the images
+            temp_dir1 = tempfile.mkdtemp()  # Create a temporary directory to store the images
+            with zipfile.ZipFile('images_kiln.zip', 'w') as zipf:
+                for i in indices_of_ones:
+                    temp_df = pd.DataFrame({'Latitude': [latitudes[i]], 'Longitude': [longitudes[i]]})
         
-        with zipfile.ZipFile('images_no_kiln.zip', 'w') as zipf:
-            for i in indices_of_zeros:
-                image_filename = f'kiln_{latitudes[i]}_{longitudes[i]}.png'
-                image_path = os.path.join(temp_dir2, image_filename)
+                    # Concatenate the temporary DataFrame with the main DataFrame
+                    df = pd.concat([df, temp_df], ignore_index=True)
+        
+                    image_filename = f'kiln_{latitudes[i]}_{longitudes[i]}.png'
+                    image_path = os.path.join(temp_dir1, image_filename)
 
-                pil_image = Image.fromarray(image_array_list[i])
+                    pil_image = Image.fromarray(image_array_list[i])
 
-                pil_image.save(image_path, format='PNG')
-                zipf.write(image_path, arcname=image_filename)
+                    pil_image.save(image_path, format='PNG')
+                    zipf.write(image_path, arcname=image_filename)
+
+            temp_dir2 = tempfile.mkdtemp()  # Create a temporary directory to store the images
+        
+            with zipfile.ZipFile('images_no_kiln.zip', 'w') as zipf:
+                for i in indices_of_zeros:
+                    image_filename = f'kiln_{latitudes[i]}_{longitudes[i]}.png'
+                    image_path = os.path.join(temp_dir2, image_filename)
+
+                    pil_image = Image.fromarray(image_array_list[i])
+
+                    pil_image.save(image_path, format='PNG')
+                    zipf.write(image_path, arcname=image_filename)
         
         
         
 
 
-        csv = df.to_csv(index=False).encode('utf-8')
+            csv = df.to_csv(index=False).encode('utf-8')
 
              
 
-        count_ones = sum(1 for element in flat_modified_list if element == 1)
-        count_zeros = sum(1 for element in flat_modified_list if element == 0)
+            count_ones = sum(1 for element in flat_modified_list if element == 1)
+            count_zeros = sum(1 for element in flat_modified_list if element == 0)
 
         st.write("The number of brick kilns in the selected region is: ", count_ones)
         st.write("The number of non-brick kilns in the selected region is: ", count_zeros)
