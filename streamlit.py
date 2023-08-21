@@ -126,9 +126,9 @@ def main():
     ab = st.text_input("API key?", "")
 
     with st.expander("Instructions"):
-        st.write("1. Enter the latitude and longitude of the bounding box in the sidebar."
-                 "2. Enter Google Maps API key in the text box below."
-                 "3. Click on submit and wait for the results to load."
+        st.write("1. Enter the latitude and longitude of the bounding box in the sidebar.\n"
+                 "2. Enter Google Maps API key in the text box below.\n"
+                 "3. Click on submit and wait for the results to load.\n"
                  "4. Download the images and CSV file using the download buttons below.")
 
     if ab and st.button("Submit"):
@@ -273,7 +273,6 @@ def main():
                 file_name = "lat_long.csv",
                 mime = "text/csv"
                 ) 
-        time.sleep(100)
 
         # Cleanup: Remove the temporary directory and zip file
         shutil.rmtree(temp_dir1)
