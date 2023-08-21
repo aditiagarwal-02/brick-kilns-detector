@@ -11,6 +11,7 @@ import numpy as np
 import io
 import gdown
 import pandas as pd
+import time
 
 import tensorflow as tf
 
@@ -268,6 +269,7 @@ def main():
                 file_name = "lat_long.csv",
                 mime = "text/csv"
                 ) 
+        time.sleep(100)
 
         # Cleanup: Remove the temporary directory and zip file
         shutil.rmtree(temp_dir1)
