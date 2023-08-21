@@ -262,14 +262,14 @@ def main():
                 file_name='images_no_kiln.zip',
                 mime="application/zip"
             )
-
-            st.download_button(
-            "Download CSV of latitude and longitude of brick kilns",
-            csv,
-            "lat_long.csv",
-            "text/csv",
-            key='download-csv'
-            ) 
+            with open('images_no_kiln.zip', 'rb') as zip_file:
+                st.download_button(
+                "Download CSV of latitude and longitude of brick kilns",
+                csv,
+                "lat_long.csv",
+                "text/csv",
+                key='download-csv'
+                ) 
 
         # Cleanup: Remove the temporary directory and zip file
         shutil.rmtree(temp_dir1)
