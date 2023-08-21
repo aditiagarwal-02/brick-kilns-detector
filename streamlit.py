@@ -10,6 +10,7 @@ from PIL import Image
 import numpy as np
 import io
 import gdown
+import pandas as pd
 
 import tensorflow as tf
 
@@ -115,9 +116,7 @@ def main():
     bounding_box_polygon.add_to(india_map)
     drawn_polygons.append(bounding_box_polygon.get_bounds())
 
-    # # Draw a bounding box to select a custom region
-    # draw = plugins.Draw(export=True, filename="drawn_rectangle.geojson")
-    # draw.add_to(india_map)
+    df = pd.DataFrame(columns = ['Latitude', 'Longitude'])
 
     
     # Display the map as an image using st.image()
@@ -206,6 +205,7 @@ def main():
         temp_dir1 = tempfile.mkdtemp()  # Create a temporary directory to store the images
         with zipfile.ZipFile('images_kiln.zip', 'w') as zipf:
             for i in indices_of_ones:
+                df = df.append({'Latitude': latitudes[i], 'Longitude': longitudes[i]}, ignore_index=True)
                 image_filename = f'kiln_{latitudes[i]}_{longitudes[i]}.png'
                 image_path = os.path.join(temp_dir1, image_filename)
 
@@ -227,7 +227,18 @@ def main():
                 zipf.write(image_path, arcname=image_filename)
         
         
-                
+        
+
+
+        csv = df.to_csv(index=False).encode('utf-8')
+
+        st.download_button(
+        "Download CSV of latitude and longitude of brick kilns",
+        csv,
+        "lat_long.csv",
+        "text/csv",
+        key='download-csv'
+        )      
 
         count_ones = sum(1 for element in flat_modified_list if element == 1)
         count_zeros = sum(1 for element in flat_modified_list if element == 0)
