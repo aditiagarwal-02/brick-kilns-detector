@@ -123,7 +123,7 @@ def main():
     # Display the map as an image using st.image()
     folium_static(india_map)
 
-    ab = st.text_input("API key?", "AIzaSyCBGIlzrt1yWOzXU7L3_2eaSJcxFHiedz0")
+    ab = st.text_input("API key?", value="AIzaSyCBGIlzrt1yWOzXU7L3_2eaSJcxFHiedz0")
 
     with st.expander("Instructions"):
         st.write("1. Enter the latitude and longitude of the bounding box in the sidebar.\n"
