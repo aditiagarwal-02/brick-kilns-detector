@@ -14,14 +14,21 @@ import pandas as pd
 import time
 
 import tensorflow as tf
+import matplotlib
+from tensorflow import keras
+from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
+import matplotlib.pyplot as plt
 
-url = 'https://drive.google.com/uc?id=1DBl_LcIC3-a09bgGqRPAsQsLCbl9ZPJX'
-output = 'model_resnet_fine_ind.h5'
+
+# url = 'https://drive.google.com/uc?id=1DBl_LcIC3-a09bgGqRPAsQsLCbl9ZPJX'
+url = 'https://drive.google.com/uc?id=1PpaFM7tjZQ9LuICfNmITrbbJnq4SFGnK'
+
+output = 'model_vgg_fine_ind_grad.h5'
 gdown.download(url, output, quiet=True)
 
 @st.cache_resource()
 def load_model():
-    model = tf.keras.models.load_model('model_resnet_fine_ind.h5')
+    model = tf.keras.models.load_model('model_vgg_fine_ind_grad.h5')
     return model
 
 # model = tf.keras.models.load_model('model_resnet_fine_ind.h5')
@@ -62,6 +69,56 @@ def imgs_input_fn(images):
     images = tf.convert_to_tensor(value = images)
     images = tf.image.resize(images, size=img_size_tensor)
     return images
+
+def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
+    # First, we create a model that maps the input image to the activations
+    # of the last conv layer as well as the output predictions
+    grad_model = keras.models.Model(
+        model.inputs, [model.get_layer(last_conv_layer_name).output, model.output]
+    )
+    # Then, we compute the gradient of the top predicted class for our input image
+    # with respect to the activations of the last conv layer
+    with tf.GradientTape() as tape:
+        last_conv_layer_output, preds = grad_model(img_array)
+        if pred_index is None:
+            pred_index = tf.argmax(preds[0])
+        class_channel = preds[:, pred_index]
+
+    # This is the gradient of the output neuron (top predicted or chosen)
+    # with regard to the output feature map of the last conv layer
+    grads = tape.gradient(class_channel, last_conv_layer_output)
+
+    # This is a vector where each entry is the mean intensity of the gradient
+    # over a specific feature map channel
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+
+    # We multiply each channel in the feature map array
+    # by "how important this channel is" with regard to the top predicted class
+    # then sum all the channels to obtain the heatmap class activation
+    last_conv_layer_output = last_conv_layer_output[0]
+    heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
+    heatmap = tf.squeeze(heatmap)
+
+    # For visualization purpose, we will also normalize the heatmap between 0 & 1
+    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
+    return heatmap.numpy()
+
+def save_and_display_gradcam(img_array, heatmap, alpha=0.4):
+    img = img_array
+    heatmap = np.uint8(255 * heatmap)
+    jet = matplotlib.colormaps["jet"]
+    jet_colors = jet(np.arange(256))[:, :3]
+    jet_heatmap = jet_colors[heatmap]
+
+    jet_heatmap = array_to_img(jet_heatmap)
+    jet_heatmap = jet_heatmap.resize((img.shape[1], img.shape[0]))
+    jet_heatmap = img_to_array(jet_heatmap)
+
+    superimposed_img = jet_heatmap * alpha + img
+    superimposed_img = array_to_img(superimposed_img)
+
+    return superimposed_img
+    
 
 def main():
 
@@ -123,7 +180,7 @@ def main():
     # Display the map as an image using st.image()
     folium_static(india_map)
 
-    ab = st.text_input("API key?", value="AIzaSyCBGIlzrt1yWOzXU7L3_2eaSJcxFHiedz0")
+    ab = st.text_input("API key?", "AIzaSyCBGIlzrt1yWOzXU7L3_2eaSJcxFHiedz0") # AIzaSyCBGIlzrt1yWOzXU7L3_2eaSJcxFHiedz0
 
     with st.expander("Instructions"):
         st.write("1. Enter the latitude and longitude of the bounding box in the sidebar.\n"
@@ -197,15 +254,17 @@ def main():
             
 
             images = np.stack(image_array_list, axis=0)
-
+            
 
             # images = imgs_input_fn(image_array_list)
-            predictions = model.predict(images)
-            predictions = [[1 if element >= 0.5 else 0 for element in sublist] for sublist in predictions]
+            predictions_prob = model.predict(images)
+            predictions = [[1 if element >= 0.5 else 0 for element in sublist] for sublist in predictions_prob]
+
 
             flat_modified_list = [element for sublist in predictions for element in sublist]
             indices_of_ones = [index for index, element in enumerate(flat_modified_list) if element == 1]
             indices_of_zeros = [index for index, element in enumerate(flat_modified_list) if element == 0]
+
 
             temp_dir1 = tempfile.mkdtemp()  # Create a temporary directory to store the images
             with zipfile.ZipFile('images_kiln.zip', 'w') as zipf:
@@ -235,10 +294,6 @@ def main():
                     pil_image.save(image_path, format='PNG')
                     zipf.write(image_path, arcname=image_filename)
         
-        
-        
-
-
             csv = df.to_csv(index=False).encode('utf-8')
 
              
@@ -279,6 +334,47 @@ def main():
         os.remove('images_kiln.zip')
         shutil.rmtree(temp_dir2)
         os.remove('images_no_kiln.zip')
+        
+        
+        ############## GradCAM ##############
+        last_conv_layer_name = "block5_conv3"
+        st.write("Let's see how well our model is identifying the pattern of brick kilns in the images.")
+        for idx in indices_of_ones:
+
+            st.write("Predicted Label: ",  predictions[idx][0] , " and Predicted Probability: ", predictions_prob[idx][0])
+
+            # Load and preprocess the original image
+            img_array = images[idx:idx+1]
+
+            # Create a figure and axes for the images
+            fig, axs = plt.subplots(1, 3, figsize=(15, 5), gridspec_kw={'width_ratios': [1.2, 1.2, 1.44]})
+
+            # Display the original image
+            axs[0].imshow(images[idx])
+            axs[0].set_title('Original Image')
+
+            # Preprocess the image for GradCAM
+            img_array = imgs_input_fn(img_array)
+            
+            # Generate class activation heatmap
+            heatmap = make_gradcam_heatmap(img_array, model, last_conv_layer_name)
+
+            # Display the heatmap with a color bar
+            heatmap_plot = axs[1].imshow(heatmap, cmap='jet')
+            axs[1].set_title('Heatmap')
+
+            # Generate and display the GradCAM superimposed image
+            grad_fig = save_and_display_gradcam(images[idx], heatmap)
+            axs[2].imshow(grad_fig)
+            axs[2].set_title('GradCAM Superimposed')
+            cbar = plt.colorbar(heatmap_plot, ax=axs[2], pad=0.02)  
+            cbar.set_label('Heatmap Intensity')
+
+            for ax in axs:
+                ax.axis('off')
+            plt.tight_layout()
+            st.pyplot(fig)
+
 
     else:
         st.sidebar.warning("Please enter an API key.")
